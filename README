@@ -1,7 +1,7 @@
 [NAME] = Hugo Klepsch
 [STUDENT ID] = 0923882
-[ASSIGNENT NUMBER] = 4
-[COURSE] = CIS 2520
+[ASSIGNENT NUMBER] = 1
+[COURSE] = CIS 2750
 
 [HOW TO BUILD]
     To build the program, just run
@@ -11,34 +11,25 @@
         in the root directory. Or alternatively, run
 
             gcc -o avltree src/{avltree,binaryTree}.c -Iinclude -Wall -std=c99
+            //todo make this the right command
 
-        to build avltree.
+        to build avltree. //todo fix
 
 
 [HOW TO RUN]
 
-    Run avltree:
+    Run avltree: //todo fix
 
-        $ ./avltree
+        $ ./avltree //todo
 
-    Then navigate the menues with options prompted on screen
+    Then navigate the menues with options prompted on screen //todo
 
 
 
 [LIMITATIONS]
 
-    Each line in the input file must be < 500 characters long.
-    Each key must be < 30 characters long.
-    Any keys entered before initializing the tree with a file will be cleared
-        upon reading a file, successful or failed.
 
 
-[SOURCES]
-    Rotation:
-        http://emunix.emich.edu/~haynes/Papers/AVL/rotations.pdf
-
-    Deletion:
-        http://www.cs.toronto.edu/~krueger/cscB63h/lectures/tut03.txt
 
 
 
