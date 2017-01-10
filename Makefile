@@ -5,13 +5,13 @@ CFLAGS=-Wall -std=c99 -g
 ODIR=objects/
 SRCDIR=src/
 INCDIR=include/
-OBJ1=$(ODIR)shell.o
+OBJ1=$(ODIR)tokenizer.o
 
-all: shell
+all: tokenizer
 
 $(ODIR)%.o: $(SRCDIR)%.c
 	$(CC) -c -o $@ $< $(CFLAGS) -I$(INCDIR)
 
-avltree: $(OBJ1)
+tokenizer: $(OBJ1)
 	$(CC) -o $@ $(CFLAGS) $^ -I$(INCDIR)
 
