@@ -1,0 +1,415 @@
+
+> Assignment 1 - C++Lite to C Converter
+> -------------------------------------
+> Due date: Friday, January 27, 2016 by midnight
+> 
+> Write a program which converts a simplified version of C++ into a C
+> program which can then be compiled. This will mostly involve replacing
+> text strings in the C++ program with the C equivalent. You will need
+> to search and replace strings, change the values of some strings, and
+> add a few lines of code to the C++ program in order to do this.
+> 
+> Your program will be written in C using the standard C libraries. 
+> You cannot use any other software tools to build your system.
+> They program must run on the course server cis2750.socs.uoguelph.ca.
+> To access this machine from off campus you will have to ssh to
+> portkey.socs.uoguelph.ca first and then ssh to the cis2750 server.
+> 
+> 
+> 1. Converting a Class to a Struct
+> ---------------------------------
+> Convert all declarations of classes to structs. A class that is
+> declared as:
+> 
+> class A {
+>    ---
+> }
+> 
+> would become:
+> 
+> struct A {
+>    ---
+> }
+> 
+> The --- mean that there would normally be code in that location but that
+> it isn't important for this example.
+> Variables inside the struct can remain unchanged. Methods in the class
+> will need to be replaced with function pointers inside the struct
+> and the function would need to be moved outside the struct.
+> A class like this:
+> 
+> class A {
+>    int a;
+> 
+>    int add(int b, int c) {
+>       return (b+c);
+>    }
+> }
+> 
+> would be converted to:
+> 
+> struct A {
+>    int a;
+>    int (*Aaddii)();
+> }
+> 
+>    int Aaddii(int b, int c) {
+>       return (b+c);
+>    }
+> 
+> The function pointer has been added to the struct. The function has
+> been moved outside the struct (the closing brace for the struct has moved).
+> The name of the function has been changed.  The reason for this is
+> described in section 2.
+> 
+> You will need to assign the function to the function pointer once
+> a copy of the struct has been defined. To do this you will need to
+> find all places where the class/struct is defined and add a function
+> call which assigns the function to the pointer.
+> 
+> If a class is defined as:
+> 
+> class A myAClass;
+> 
+> then your program will need to replace it with:
+> 
+> struct A myAClass;
+> constructorA(...);
+> 
+> where constructorA() is a function that your program will produce that
+> assigns the functions to the function pointers in struct A
+> (e.g. myClass.Aaddii = Aaddii). The ... in the parameter list
+> for the constructor means that you will need to pass some parameter
+> to the constructor to make it work correctly.
+> 
+> You will need to produce one of these constructors for each class. 
+> 
+> 
+> 
+> 
+> 2. Renaming Methods in the Class
+> --------------------------------
+> It is possible for two functions to have the same name if they
+> appear in different classes. To prevent the compiler from complaining
+> that you have two functions with the same name you need to change
+> the names (mangle the names) so they appear unique.
+> For example, the following classes would be fine because the add()
+> functions are inside different classes. The functions are within the
+> scope of the class so their names don't conflict with each other.
+> 
+> class A {
+>    ---
+>    add(int x) {
+>       ---};
+> }
+> 
+> class B {
+>    ---
+>    add(int y) {
+>       ---};
+> }
+> 
+> Once these are converted to structs and the functions move outside the
+> classes the names will now conflict with each other. In this case, the
+> two add() functions are a problem.
+> 
+> struct A {
+>    ---
+> }
+> 
+>    add(int x) {
+>       ---};
+> 
+> struct B {
+>    ---
+> }
+> 
+>    add(int y) {
+>       ---};
+> 
+> The functions need to have their names changed in order to remove
+> the naming conflict. The first step in renaming the functions
+> is to append the name of the class to the start of each function
+> name. The above example would become:
+> 
+> struct A {
+>    ---
+> }
+> 
+>    Aadd(int x) {
+>       ---};
+> 
+> struct B {
+>    ---
+> }
+> 
+>    Badd(int y) {
+>       ---};
+> 
+> 
+> The idea is continued in section 4 with method overloading.
+> 
+> 
+> 
+> 3. Introducing Class Scope
+> --------------------------
+> The class variables should be accessible to the methods in that class.
+> For example, the function fn() should be able to print the variable a. 
+> 
+> class A {
+>    int a;
+> 
+>    fn() {
+>       printf("%d\n", a);
+>    }
+> }
+> 
+> When the class is converted to a struct the function no longer is
+> associated with the class so the a variable is undefined and the
+> program wont compile (as seen below).
+> 
+> struct A {
+>    int a;
+> }
+> 
+>    Afn() {
+>       printf("%d\n", a);
+>    }
+> 
+> To address this problem you need to change the a variable so that
+> it refers to the struct. You will need to pass a parameter to the
+> function when it is called that will allow it to reference
+> the parent struct. In the following example the ... needs
+> to be replaced with a reference to the parent struct that the
+> function was derived from. 
+> 
+>    Afn(...) {
+>       printf("%d\n", a);
+>    }
+> 
+> 
+> int main() {
+>    Afn(...);
+> }
+> 
+> The following example demonstrates three levels of scope in the
+> program. The three types of scope are:
+>    -variable a has global (file) scope
+>    -variable b has class scope and is available inside class B
+>    -variable c and d have local scope and are available inside the function
+> 
+> int a;
+> 
+> class B {
+>    int b;
+> 
+>    int add(int c) {
+>       int d;
+>       printf("%d\n", a+b+c+d);
+>    }
+> }
+> 
+> int main() {
+> class B myB;
+> 
+>    myB.add(3);
+> }
+> 
+> When this is converted to C the program would look like this:
+> 
+> int a;
+> 
+> struct B {
+>    int b;
+>    int (*Baddi)();
+> }
+> 
+>    int Baddi(..., int c) {
+>       int d;
+>       printf("%d\n", a+b+c+d);
+>    }
+> 
+> int main() {
+> struct B myB;
+> constructorB(...);
+> 
+>    myB.Baddi(3);
+> }
+> 
+> where ... is replaced with reference to the struct. 
+> Notice that the global and local variables don't need to be changed.
+> Only the class variable need to be modified.
+> 
+> 
+> 4. Method Overloading
+> ---------------------
+> Method overloading allows for multiple methods to have the same
+> name and to be distinguished by the number and type of parameters
+> passed to the method. For example, the following four methods
+> all have the same name but different parameter lists:
+> 
+> add(int a, int b);
+> add(int a);
+> add(float x, float y, float z);
+> add();
+> 
+> Section 2 describes appending the class name to the start of the
+> function. To allow overloading of the functions/methods you need
+> to append the parameter types to the end of the function names.
+> If the above functions were in class A they would be renamed:
+> 
+> Aaddii(int a, int b);
+> Aaddi(int a);
+> Aaddfff(float x, float y, float z);
+> Aadd();
+>  
+> Use the first letter for the type in the name of the function.
+> For example int = i, float = f, long = l, double = d, char = c.
+> 
+> You will need to rename the function where they are declared
+> outside the struct and also rename them when they are called
+> in the program. For example:
+> 
+> int main() {
+> class A myClass;
+>    ---
+>    myClass.add(int x, int x);
+>    ---
+> }
+> 
+> would need to change to:
+> 
+> int main() {
+> struct A myClass;
+> constructorA();
+>    ---
+>    myClass.Aaddii(int x, int x);
+>    ---
+> }
+> 
+> The call to add has to be changed to reflect the new name of the function.
+> 
+> 
+> 
+> 
+> Memory Checking
+> ------------------
+> Make sure your C program does not have any memory leaks. You can test this
+> using valgrind.
+> 
+> 
+> Compiler Notes
+> --------------
+> Compile all of your code using the -g flag. This is used to include
+> debugging information and to check for memory leaks. Include the -g
+> flag in your makefile when your compile your code.
+> 
+> Compile all code using the -ansi -Wall command line arguments to gcc.
+> The compiler should produce no warnings when your program is compiled.
+> 
+> 
+> Handin Notes
+> ------------
+> 1. This assignment will be regraded only if the marker makes a mistake.
+> This includes problems such as recording the grade incorrectly,
+> not following instructions in the readme.txt when running the program, or
+> calculating the final grade incorrectly.
+> 
+> If the assignment is submitted incorrectly, if it does not compile,
+> if files are missing or incomplete, then a grade of zero will be assigned.
+> 
+> 2. Submit the assignment using the dropbox for Assignment 1 in Courselink.
+> 
+> 3. Include a readme.txt which contains your name, student number, and a short
+> description of any parts of the program which do not function correctly.
+> If there are some circumstances where functions don't always work correctly
+> or if they don't work at all then include this information in the readme.txt.
+> If there are special instructions which are necessary to make your C program
+> work correctly then you should include them in the readme.txt.
+> This should be a plain text file and not a .doc, .docx, or .pdf file.
+> 
+> 4. Your code must compile and run on the the cis2750.socs.uoguelph.ca
+> server used for the course.  If it does not then it will receive a grade
+> of zero.
+> 
+> 5. Submit your source files necessary to compile your C code, a makefile that
+> will compile the code, and any .c and .h  file necessary to build the project,
+> and a readme.txt..
+> 
+> Do not submit any compiled code, it will be deleted before your program
+> is compiled.
+> 
+> Name your compiled C program a1.  The makefile should compile the C
+> program when make is typed.
+> 
+> 6. Do not use any global variables.
+> 
+> 7. Format your code properly and use meaningful variable names.
+> 
+> 8. All code is to be written individually. No group work is allowed.
+>    You cannot use code found on the internet for the assignment.
+>    You cannot use any tools that generate code such as lexers,
+>    compiler-compilers, parsers, or regular expression libraries
+>    for this assignment.
+>  
+>   
+> 
+> Submitting the Assignment
+> -------------------------
+> 1. Backup your files. Either store them in a source code repository such
+>    as Git or copy them to a backup directory. If you accidentally destroy
+>    your files while trying to tar them then this will allow you to recover
+>    them. Do not use a public Git repository as other people will be able
+>    to view your code. Use a private Git repo.
+> 2. Package your .c, .h, makefile, and readme.txt in a tar file.
+>    Do not omit a1.tar in the following line or you will destroy your
+>    assignment.  The file is created using:
+> 
+>        tar cf a1.tar *.h *.c makefile readme.txt
+> 
+> 3. You can check the contents in the tar archive using:
+> 
+> 	tar tf a1.tar
+> 
+>    If the tar file does not contain all of the files necessary to build
+>    your assignment and the readme.txt then rebuild the archive.
+> 
+> 4. Testing your submission:
+> 	-make a directory named testing
+> 	-copy the a1.tar file into the testing directory
+> 	-change into the testing directory
+> 	-in the testing directory unpack the tar file using
+> 		tar xvf a1.tar
+> 	-type make
+>    At this point the a1 executable should be in the current directory.
+>    If it is not then determine why the program didn't compile properly
+>    and recreate the tar file.
+> 
+> 5. Once you have a tar file that will unpack properly and you can build
+>    the executable by typing make you can then submit the a1.tar file
+>    to the CIS*2750 dropbox on courselink.
+> 
+> Follow the above steps to compile the C code.
+> If you do not then you cannot be sure that your assignment can be marked.
+> If any of the above steps fail then the assignment wont be marked and you
+> will receive a substantial loss of marks.
+> 
+> 
+> Marking the Assignment
+> ----------------------
+> The following steps will be followed to compile your C program:
+> 
+>     The file you submit will be copied into a marking directory.
+>     The marker will cd into that directory. 
+>     The submission file will be unpacked using tar xvf a1.tar.
+>     The marker will not cd to another subdirectory.
+>     The marker will type make.
+>     At this point there should be a program named a1 in the current directory.
+> 
+> 
+> If there is no makefile in the directory,  the assignment does not compile,
+> or the compiled program is not named a1, or if the code is in a subdirectory,
+> then the assignment will receive a substantial loss of marks.
+ 
+ 
+   
