@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -std=c99 -g
+CFLAGS=-Wall -ansi -g
 #CFLAGS=-Wall -std=c99 -g -pg
 #CFLAGS=-Wall -std=c99 -O2 -march=native
 ODIR=objects/
