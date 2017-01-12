@@ -5,13 +5,19 @@ CFLAGS=-Wall -ansi -g
 ODIR=objects/
 SRCDIR=src/
 INCDIR=include/
-OBJ1=$(ODIR)tokenizer.o
+OBJ1=$(ODIR)token.o
 
-all: tokenizer
+all: token
 
 $(ODIR)%.o: $(SRCDIR)%.c
 	$(CC) -c -o $@ $< $(CFLAGS) -I$(INCDIR)
 
-tokenizer: $(OBJ1)
+token: $(OBJ1)
 	$(CC) -o $@ $(CFLAGS) $^ -I$(INCDIR)
+
+test: token
+	git pull
+	sleep 1
+	make
+	./token assets/test.cpp
 

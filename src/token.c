@@ -1,4 +1,4 @@
-#include <tokenizer.h>
+#include <token.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -19,7 +19,7 @@ int main(int argc, char ** argv) {
     /* assuring that the filename is null-terminated */
     filename[99] = '\0';
 
-    /* enters if body on function failure */
+    /* enters if on function failure */
     if (!tokenize(filename)) {
         puts("Could not tokenize file");
         return EXIT_FAILURE;

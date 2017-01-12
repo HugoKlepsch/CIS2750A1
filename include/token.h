@@ -1,5 +1,5 @@
-#ifndef __TOKENIZER_HKLEPSCH_H__
-#define __TOKENIZER_HKLEPSCH_H__
+#ifndef __TOKEN_HKLEPSCH_H__
+#define __TOKEN_HKLEPSCH_H__
 
 #define RETURN_FAILURE 0
 #define RETURN_SUCCESS 1
