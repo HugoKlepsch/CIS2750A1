@@ -2,6 +2,7 @@
 #define __TOKEN_HKLEPSCH_H__
 
 #include <stdbool.h>
+#include <linkedList.h>
 
 #define RETURN_FAILURE 0
 #define RETURN_SUCCESS 1
@@ -19,7 +20,27 @@ enum StringPrintingState {
     DOUBLETICK,
 };
 
-int tokenize(char * filename);
+enum TokenType {
+    COMMENT,
+    IDENTIFIER,
+    FUNCTION,
+    DELIMITEROPEN,
+    DELIMITERCLOSE,
+    LINEEND,
+    CLASS,
+    TYPE,
+};
+
+struct Token {
+    char * string;
+    enum TokenType type;
+};
+
+struct Token * makeToken(char * string, enum TokenType type);
+
+void freeToken(void * token);
+
+int tokenize(char * filename, LinkedList_s * tokenList);
 
 char * delNReplace(char * origStr, int start, int len2Del, char * replaceStr);
 

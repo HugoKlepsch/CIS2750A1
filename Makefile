@@ -5,7 +5,7 @@ CFLAGS=-Wall -ansi -g
 ODIR=objects/
 SRCDIR=src/
 INCDIR=include/
-OBJ1=$(ODIR)token.o
+OBJ1=$(ODIR)token.o $(ODIR)linkedList.o
 
 all: token
 

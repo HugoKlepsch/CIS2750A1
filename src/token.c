@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <linkedList.h>
 
 void test() {
     int length;
@@ -35,16 +36,42 @@ int main(int argc, char ** argv) {
     /* assuring that the filename is null-terminated */
     filename[99] = '\0';
 
-    /* enters if on function failure */
-    if (!tokenize(filename)) {
-        puts("Could not tokenize file");
+    LinkedList_s tokens;
+    if (initList_s(&tokens) == 0) {
+        /*failed to initialize the list */
+        printf("Failed to initialize storage structure\n");
         return EXIT_FAILURE;
     }
+    if (tokenize(filename, &tokens) == EXIT_FAILURE) {
+        /*failed to tokenize file*/
+        printf("Failed to tokenize file\n");
+        destroyList_s(&tokens, &freeToken);
+        return EXIT_FAILURE;
+    }
+
+
+    destroyList_s(&tokens, &freeToken);
     return EXIT_SUCCESS;
 }
 
 
-int tokenize(char * filename) {
+struct Token * makeToken(char * string, enum TokenType type) {
+    struct Token * newToken;
+    newToken = malloc(sizeof(*newToken));
+    newToken->string = string;
+    newToken->type = type;
+    return newToken;
+}
+
+
+void freeToken(void * token) {
+    struct Token * givenToken = (struct Token *) token;
+    free(givenToken->string);
+    free(givenToken);
+}
+
+
+int tokenize(char * filename, LinkedList_s * tokenList) {
     char buffer[512];
     FILE * inFP = fopen(filename, "r");
 
