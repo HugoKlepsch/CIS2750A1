@@ -5,7 +5,7 @@ class A {
     }
 }
 
-class B { 
+class B {
     int b;
     int fn() {
         class A myClass;
