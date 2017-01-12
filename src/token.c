@@ -42,7 +42,7 @@ int main(int argc, char ** argv) {
         printf("Failed to initialize storage structure\n");
         return EXIT_FAILURE;
     }
-    if (tokenize(filename, &tokens) == EXIT_FAILURE) {
+    if (tokenize(filename, &tokens) == RETURN_FAILURE) {
         /*failed to tokenize file*/
         printf("Failed to tokenize file\n");
         destroyList_s(&tokens, &freeToken);
