@@ -5,6 +5,23 @@
 #include <stdbool.h>
 #include <linkedList.h>
 
+void test_copyString() {
+    char exStr[] = "example string";
+    char * newStr = copyString(exStr, 0, 7);
+    printf("%s\n", newStr);
+    free(newStr);
+
+    newStr = copyString(exStr, 2, 3);
+    printf("%s\n", newStr);
+    free(newStr);
+
+    newStr = copyString(exStr, 10, 10);
+    printf("%s\n", newStr);
+    free(newStr);
+
+}
+
+
 void test() {
     int length;
     /*char exStr[] = "This is an example string."; */
@@ -18,9 +35,11 @@ void test() {
     strcpy(newStr, exStr);
     newStr = delNReplace(newStr, 1, 5, "struct");
     printf("%s\n", newStr);
-
     free(newStr);
+
+    test_copyString();
 }
+
 
 int main(int argc, char ** argv) {
     char filename[100];
@@ -82,80 +101,6 @@ int tokenize(char * filename, LinkedList_s * tokenList) {
 
     /* read every line of the file */
     while(fgets(buffer, 512, inFP)) {
-        enum lastPrintedType lpt = NONE;
-        enum StringPrintingState sps = NOSTRING;
-        char * currentChar = buffer;
-        /* go over every character in the line */
-        while(*currentChar != '\0') {
-
-            switch(*currentChar) {
-                /* for any whitespace, print a newline */
-                case ' ':
-                case '\t':
-                case '\n':
-                    if (sps == NOSTRING) {
-                        if (lpt == CHARACTER) {
-                            puts("");
-                        }
-                        lpt = WHITESPACE;
-                    } else {
-                        printf("%c", *currentChar);
-                    }
-                    break;
-                    /* on any punctuation */
-                case ',':
-                    /* print the char, */
-                case ';':
-                    /* and a newline */
-                case '(':
-                case ')':
-                case '{':
-                case '}':
-                    if (sps == NOSTRING) {
-                        if (lpt == CHARACTER) {
-                            puts("");
-                        }
-                        printf("%c\n", *currentChar);
-                        lpt = PUNCTUATION;
-                    } else {
-                        printf("%c", *currentChar);
-                    }
-                    break;
-                case '\'':
-                    if (sps == NOSTRING) {
-                        printf("\n%c", *currentChar);
-                        sps = SINGLETICK;
-                    } else if (sps == SINGLETICK) {
-                        printf("%c\n", *currentChar);
-                        sps = NOSTRING;
-                    } else if (sps == DOUBLETICK) {
-                        printf("%c", *currentChar);
-                    }
-                    break;
-                case '\"':
-                    if (sps == NOSTRING) {
-                        printf("\n%c", *currentChar);
-                        sps = DOUBLETICK;
-                    } else if (sps == SINGLETICK) {
-                        printf("%c", *currentChar);
-                        /* TODO FIND A WAY TO HANDEL THIS */
-
-                        /* WARNING WARNING TICK MISMATCH */
-
-                    } else if (sps == DOUBLETICK) {
-                        printf("%c\n", *currentChar);
-                        sps = NOSTRING;
-                    }
-                    break;
-                default:
-                    printf("%c", *currentChar);
-                    lpt = CHARACTER;
-                    break;
-            }
-
-            /* must be the last line in the while loop */
-            ++currentChar;
-        }
     }
     fclose(inFP);
     return RETURN_SUCCESS;
@@ -195,6 +140,18 @@ char * delNReplace(char * origStr, int start, int len2Del, char * replaceStr) {
     free(origStr);
     return newStr;
 
+}
+
+
+char * copyString(char * origStr, int start, int len2Cpy) {
+    char * newStr = malloc(len2Cpy + 1);  /* +1 for \0 at end */
+    int i;
+    for (i = 0; i < len2Cpy && origStr[i+start] != '\0'; ++i) {
+        /*copy wanted length or stop on overrun origStr */
+        newStr[i] = origStr[i + start];
+    }
+    newStr[i] = '\0';
+    return newStr;
 }
 
 
