@@ -20,4 +20,5 @@ test: token
 	sleep 1
 	make
 	./token assets/test.cpp
+	./token
 
