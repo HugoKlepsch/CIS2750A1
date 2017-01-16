@@ -74,11 +74,12 @@ int main(int argc, char ** argv) {
 }
 
 
-struct Token * makeToken(char * string, enum TokenType type) {
+struct Token * makeToken(char * string, enum TokenType type, int bracelevel) {
     struct Token * newToken;
     newToken = malloc(sizeof(*newToken));
     newToken->string = string;
     newToken->type = type;
+    newToken->bracelevel = bracelevel;
     return newToken;
 }
 
@@ -90,19 +91,136 @@ void freeToken(void * token) {
 }
 
 
+void printToken(struct Token token) {
+    printf("\"%s\"::%d::", token.string, token.bracelevel);
+    switch (token.type) {
+        case WHITESPACE:
+            printf("WHITESPACE\n");
+            break;
+        case COMMENT:
+            printf("COMMENT\n");
+            break;
+        case CLASS:
+            printf("CLASS\n");
+            break;
+        case TYPE:
+            printf("TYPE\n");
+            break;
+        case IDENTIFIER:
+            printf("IDENTIFIER\n");
+            break;
+        case FUNCTION:
+            printf("FUNCTION\n");
+            break;
+        case SEMICOLON:
+            printf("SEMICOLON\n");
+            break;
+        case OPENBRACE:
+            printf("OPENBRACE\n");
+            break;
+        case CLOSEBRACE:
+            printf("CLOSEBRACE\n");
+            break;
+        case OPENPAREN:
+            printf("OPENPAREN\n");
+            break;
+        case CLOSEPAREN:
+            printf("CLOSEPAREN\n");
+            break;
+        case OPENBRACKET:
+            printf("OPENBRACKET\n");
+            break;
+        case CLOSEBRACKET:
+            printf("CLOSEBRACKET\n");
+            break;
+    }
+}
+
+
+void printTokenList(LinkedList_s * tokenList) {
+    int i;
+    struct Token * tempToken;
+    for (i = 0; i < length_s(tokenList); ++i) {
+        tempToken = (struct Token *) getData_s(tokenList, i);
+        printToken(*tempToken);
+    }
+}
+
+
 int tokenize(char * filename, LinkedList_s * tokenList) {
     char buffer[512];
-    FILE * inFP = fopen(filename, "r");
+    char * wholeFile = malloc(512);
+    if (!wholeFile) {
+        puts("Failed to get memory");
+        return RETURN_FAILURE;
+    }
+    wholeFile[0] = '\0';
 
+    FILE * inFP = fopen(filename, "r");
     if (inFP == NULL) {
         printf("Failed to open given file!\n");
+        free(wholeFile);
         return RETURN_FAILURE;
     }
 
     /* read every line of the file */
     while(fgets(buffer, 512, inFP)) {
+        wholeFile = realloc(wholeFile, strlen(wholeFile) + strlen(buffer) + 1);
+        strcat(wholeFile, buffer);
     }
     fclose(inFP);
+    printf("%s", wholeFile);
+
+
+
+
+    /*tokenize file*/
+    int i = 0;
+    int bracelevel = 0;
+    while (wholeFile[i] != '\0') {
+        int traverseInd = 0;
+        char * tokenBuffer;
+        struct Token * tempToken;
+        /*tokenize whitespace together */
+        if (isWhitespace(wholeFile[i])) {
+            for (traverseInd = i;
+                    wholeFile[traverseInd] != '\0'
+                    && isWhitespace(wholeFile[traverseInd]);
+                    ++traverseInd) {
+                /*continue while there's whitespace */
+            }
+            tokenBuffer = copyString(wholeFile, i, (traverseInd - i));
+            tempToken = makeToken(tokenBuffer, WHITESPACE, bracelevel);
+            addNodeEnd_s(tokenList, tempToken);
+        }
+        /*tokenize single line comments together*/
+        if (wholeFile[i] == '/' && wholeFile[i+1] == '/') {
+            for (traverseInd = i;
+                    wholeFile[traverseInd] != '\0'
+                    && wholeFile[traverseInd] != '\n';
+                    ++traverseInd) {
+                /*continue on the same line*/
+            }
+            tokenBuffer = copyString(wholeFile, i, (traverseInd - i));
+            tempToken = makeToken(tokenBuffer, COMMENT, bracelevel);
+            addNodeEnd_s(tokenList, tempToken);
+        }
+        /*tokenize multi line comments together*/
+        if (wholeFile[i] == '/' && wholeFile[i+1] == '*') {
+            for (traverseInd = i;
+                    wholeFile[traverseInd] != '\0'
+                    && !(wholeFile[traverseInd] == '*' && wholeFile[traverseInd] == '/');
+                    ++traverseInd) {
+                /*continue until multi-line end characters reached*/
+            }
+            tokenBuffer = copyString(wholeFile, i, (traverseInd - i));
+            tempToken = makeToken(tokenBuffer, COMMENT, bracelevel);
+            addNodeEnd_s(tokenList, tempToken);
+        }
+
+    }
+
+
     return RETURN_SUCCESS;
 
 }
@@ -177,6 +295,13 @@ bool isIdentChar(char character) {
 }
 
 
+bool isWhitespace(char character) {
+    if (character == '\n' || character == '\t' || character == ' ' || character == '\r') {
+        return true;
+    } else {
+        return false;
+    }
+}
 
 
 

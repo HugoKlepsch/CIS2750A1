@@ -15,27 +15,35 @@ enum StringPrintingState {
 };
 
 enum TokenType {
+    WHITESPACE,
     COMMENT,
-    IDENTIFIER,
-    FUNCTION,
-    DELIMITEROPEN,
-    DELIMITERCLOSE,
-    LINEEND,
     CLASS,
     TYPE,
-    WHITESPACE,
+    IDENTIFIER,
+    FUNCTION,
+    SEMICOLON,
+    OPENBRACE,
+    CLOSEBRACE,
+    OPENPAREN,
+    CLOSEPAREN,
+    OPENBRACKET,
+    CLOSEBRACKET,
 };
 
 struct Token {
     char * string;
     enum TokenType type;
-
+    int bracelevel;
 };
 
 
-struct Token * makeToken(char * string, enum TokenType type);
+struct Token * makeToken(char * string, enum TokenType type, int bracelevel);
 
 void freeToken(void * token);
+
+void printToken(struct Token token);
+
+void printTokenList(LinkedList_s * tokenList);
 
 int tokenize(char * filename, LinkedList_s * tokenList);
 
@@ -44,6 +52,8 @@ char * delNReplace(char * origStr, int start, int len2Del, char * replaceStr);
 char * copyString(char * origStr, int start, int len2Cpy);
 
 bool isIdentChar(char charater);
+
+bool isWhitespace(char character);
 
 #endif
 
