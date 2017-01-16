@@ -181,8 +181,8 @@ int tokenize(char * filename, LinkedList_s * tokenList) {
         int traverseInd = 0;
         char * tokenBuffer;
         struct Token * tempToken;
-        /*tokenize whitespace together */
         if (isWhitespace(wholeFile[i])) {
+            /*tokenize whitespace together */
             for (traverseInd = i;
                     wholeFile[traverseInd] != '\0'
                     && isWhitespace(wholeFile[traverseInd]);
@@ -192,9 +192,9 @@ int tokenize(char * filename, LinkedList_s * tokenList) {
             tokenBuffer = copyString(wholeFile, i, (traverseInd - i));
             tempToken = makeToken(tokenBuffer, WHITESPACE, bracelevel);
             addNodeEnd_s(tokenList, tempToken);
-        }
-        /*tokenize single line comments together*/
-        if (wholeFile[i] == '/' && wholeFile[i+1] == '/') {
+            i = traverseInd;
+        } else if (wholeFile[i] == '/' && wholeFile[i+1] == '/') {
+            /*tokenize single line comments together*/
             for (traverseInd = i;
                     wholeFile[traverseInd] != '\0'
                     && wholeFile[traverseInd] != '\n';
@@ -204,9 +204,9 @@ int tokenize(char * filename, LinkedList_s * tokenList) {
             tokenBuffer = copyString(wholeFile, i, (traverseInd - i));
             tempToken = makeToken(tokenBuffer, COMMENT, bracelevel);
             addNodeEnd_s(tokenList, tempToken);
-        }
-        /*tokenize multi line comments together*/
-        if (wholeFile[i] == '/' && wholeFile[i+1] == '*') {
+            i = traverseInd;
+        } else if (wholeFile[i] == '/' && wholeFile[i+1] == '*') {
+            /*tokenize multi line comments together*/
             for (traverseInd = i;
                     wholeFile[traverseInd] != '\0'
                     && !(wholeFile[traverseInd] == '*' && wholeFile[traverseInd] == '/');
@@ -216,10 +216,12 @@ int tokenize(char * filename, LinkedList_s * tokenList) {
             tokenBuffer = copyString(wholeFile, i, (traverseInd - i));
             tempToken = makeToken(tokenBuffer, COMMENT, bracelevel);
             addNodeEnd_s(tokenList, tempToken);
+            i = traverseInd;
         }
-
     }
 
+    printTokenList(tokenList);
+    free(wholeFile);
 
     return RETURN_SUCCESS;
 
