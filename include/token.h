@@ -9,11 +9,6 @@
 
 
 
-enum ScopeType {
-    GLOBAL, 
-    LOCAL,
-    CLASS,
-}
 
 enum TokenType {
     WHITESPACE,
@@ -23,7 +18,6 @@ enum TokenType {
     CLASSNAME,
     VARNAME,
     FUNCTIONNAME,
-    PARAMETER,
     GENERAL,
     SEMICOLON,
     OPENBRACE,
