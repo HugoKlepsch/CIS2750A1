@@ -15,7 +15,7 @@ $(ODIR)%.o: $(SRCDIR)%.c
 token: $(OBJ1)
 	$(CC) -o $@ $(CFLAGS) $^ -I$(INCDIR)
 
-test: token
+test:
 	git pull
 	sleep 1
 	make
