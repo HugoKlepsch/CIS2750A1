@@ -103,20 +103,11 @@ void printToken(struct Token token) {
         case CLASS:
             printf("CLASS\n");
             break;
-        case TYPE:
-            printf("TYPE\n");
-            break;
-        case CLASSNAME:
-            printf("CLASSNAME\n");
-            break;
-        case VARNAME:
-            printf("VARNAME\n");
-            break;
-        case FUNCTIONNAME:
-            printf("FUNCTIONNAME\n");
-            break;
         case GENERAL:
             printf("GENERAL\n");
+            break;
+        case PUNCTUATION:
+            printf("PUNCTUATION\n");
             break;
         case SEMICOLON:
             printf("SEMICOLON\n");
@@ -220,6 +211,28 @@ int tokenize(char * filename, LinkedList_s * tokenList) {
             tokenBuffer = copyString(wholeFile, i, (traverseInd - i));
             tempToken = makeToken(tokenBuffer, COMMENT, bracelevel);
             addNodeEnd_s(tokenList, tempToken);
+        } else if (wholeFile[i] == '-') {
+            tokenBuffer = copyString(wholeFile, i, 1);
+            tempToken = makeToken(tokenBuffer, PUNCTUATION, bracelevel);
+            addNodeEnd_s(tokenList, tempToken);
+        } else if (wholeFile[i] == '+') {
+            tokenBuffer = copyString(wholeFile, i, 1);
+            tempToken = makeToken(tokenBuffer, PUNCTUATION, bracelevel);
+            addNodeEnd_s(tokenList, tempToken);
+        } else if (wholeFile[i] == '*') {
+            tokenBuffer = copyString(wholeFile, i, 1);
+            tempToken = makeToken(tokenBuffer, PUNCTUATION, bracelevel);
+            addNodeEnd_s(tokenList, tempToken);
+        } else if (wholeFile[i] == '/') {
+            tokenBuffer = copyString(wholeFile, i, 1);
+            tempToken = makeToken(tokenBuffer, PUNCTUATION, bracelevel);
+            addNodeEnd_s(tokenList, tempToken);
+        } else if (wholeFile[i] == '.' &&
+                !isNumber(wholeFile[i-1]) &&
+                !isNumber(wholeFile[i+1])) {
+            tokenBuffer = copyString(wholeFile, i, 1);
+            tempToken = makeToken(tokenBuffer, PUNCTUATION, bracelevel);
+            addNodeEnd_s(tokenList, tempToken);
         } else if (isClassToken(&wholeFile[i])){
             /* match 'class' token */
             for (traverseInd = i;
@@ -240,19 +253,7 @@ int tokenize(char * filename, LinkedList_s * tokenList) {
                 /*continue until not a valid identifyer char*/
             }
             tokenBuffer = copyString(wholeFile, i, (traverseInd - i));
-            tempToken = makeToken(tokenBuffer, CLASSNAME, bracelevel);
-            addNodeEnd_s(tokenList, tempToken);
-        } else if (wholeFile[i] == '{') {
-            /* open brace */
-            tokenBuffer = copyString(wholeFile, i, 1);
-            tempToken = makeToken(tokenBuffer, OPENBRACE, bracelevel);
-            addNodeEnd_s(tokenList, tempToken);
-            ++bracelevel;
-        } else if (wholeFile[i] == '}') {
-            /* close brace */
-            --bracelevel;
-            tokenBuffer = copyString(wholeFile, i, 1);
-            tempToken = makeToken(tokenBuffer, CLOSEBRACE, bracelevel);
+            tempToken = makeToken(tokenBuffer, GENERAL, bracelevel);
             addNodeEnd_s(tokenList, tempToken);
         } else if (wholeFile[i] == '"') {
             /*find whole string */
@@ -272,9 +273,30 @@ int tokenize(char * filename, LinkedList_s * tokenList) {
             tokenBuffer = copyString(wholeFile, i, (traverseInd - i));
             tempToken = makeToken(tokenBuffer, SEMICOLON, bracelevel);
             addNodeEnd_s(tokenList, tempToken);
-        } else if (getLastTypeExcludeWhitespace(tokenList) == TYPE) {
-
+        }  else if (wholeFile[i] == '(') {
+            /* open parenthesis */
+            tokenBuffer = copyString(wholeFile, i, 1);
+            tempToken = makeToken(tokenBuffer, OPENPAREN, bracelevel);
+            addNodeEnd_s(tokenList, tempToken);
+        } else if (wholeFile[i] == ')') {
+            /* open parenthesis */
+            tokenBuffer = copyString(wholeFile, i, 1);
+            tempToken = makeToken(tokenBuffer, CLOSEPAREN, bracelevel);
+            addNodeEnd_s(tokenList, tempToken);
+        } else if (wholeFile[i] == '{') {
+            /* open brace */
+            tokenBuffer = copyString(wholeFile, i, 1);
+            tempToken = makeToken(tokenBuffer, OPENBRACE, bracelevel);
+            addNodeEnd_s(tokenList, tempToken);
+            ++bracelevel;
+        } else if (wholeFile[i] == '}') {
+            /* close brace */
+            --bracelevel;
+            tokenBuffer = copyString(wholeFile, i, 1);
+            tempToken = makeToken(tokenBuffer, CLOSEBRACE, bracelevel);
+            addNodeEnd_s(tokenList, tempToken);
         }
+
 
 
         /*must be at the end of the while loop to ensure that the loop
@@ -395,6 +417,12 @@ enum TokenType getLastTypeExcludeWhitespace(LinkedList_s * tokenList) {
 }
 
 
+bool isNumber(char c) {
+    if (c >= 48 && c <= 57) {
+        return true;
+    }
+    return false;
+}
 
 
 

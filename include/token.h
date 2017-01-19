@@ -14,11 +14,8 @@ enum TokenType {
     WHITESPACE,
     COMMENT,
     CLASS,
-    TYPE,
-    CLASSNAME,
-    VARNAME,
-    FUNCTIONNAME,
     GENERAL,
+    PUNCTUATION,
     SEMICOLON,
     OPENBRACE,
     CLOSEBRACE,
@@ -58,6 +55,8 @@ bool isClassToken(char * str);
 bool strmatch(char * str1, char * str2);
 
 enum TokenType getLastTypeExcludeWhitespace(LinkedList_s * tokenList);
+
+bool isNumber(char c);
 
 #endif
 
