@@ -58,5 +58,7 @@ enum TokenType getLastTypeExcludeWhitespace(LinkedList_s * tokenList);
 
 bool isNumber(char c);
 
+bool isSpecial(char c);
+
 #endif
 

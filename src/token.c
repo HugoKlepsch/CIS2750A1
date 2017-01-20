@@ -173,9 +173,9 @@ int tokenize(char * filename, LinkedList_s * tokenList) {
 
     /*tokenize file*/
     int i = 0;
+    int traverseInd = 0;
     int bracelevel = 0;
     while (wholeFile[i] != '\0') {
-        int traverseInd = 0;
         char * tokenBuffer;
         struct Token * tempToken;
         if (isWhitespace(wholeFile[i])) {
@@ -244,17 +244,6 @@ int tokenize(char * filename, LinkedList_s * tokenList) {
             tokenBuffer = copyString(wholeFile, i, (traverseInd - i));
             tempToken = makeToken(tokenBuffer, CLASS, bracelevel);
             addNodeEnd_s(tokenList, tempToken);
-        } else if (getLastTypeExcludeWhitespace(tokenList) == CLASS) {
-            /*parse className */
-            for (traverseInd = i;
-                    wholeFile[traverseInd] != '\0'
-                    && isIdentChar(wholeFile[traverseInd]);
-                    ++traverseInd) {
-                /*continue until not a valid identifyer char*/
-            }
-            tokenBuffer = copyString(wholeFile, i, (traverseInd - i));
-            tempToken = makeToken(tokenBuffer, GENERAL, bracelevel);
-            addNodeEnd_s(tokenList, tempToken);
         } else if (wholeFile[i] == '"') {
             /*find whole string */
             for (traverseInd = i + 1;
@@ -294,6 +283,28 @@ int tokenize(char * filename, LinkedList_s * tokenList) {
             --bracelevel;
             tokenBuffer = copyString(wholeFile, i, 1);
             tempToken = makeToken(tokenBuffer, CLOSEBRACE, bracelevel);
+            addNodeEnd_s(tokenList, tempToken);
+        } else if (wholeFile[i] == '[') {
+            /* open brace */
+            tokenBuffer = copyString(wholeFile, i, 1);
+            tempToken = makeToken(tokenBuffer, OPENBRACKET, bracelevel);
+            addNodeEnd_s(tokenList, tempToken);
+        } else if (wholeFile[i] == ']') {
+            /* close brace */
+            tokenBuffer = copyString(wholeFile, i, 1);
+            tempToken = makeToken(tokenBuffer, OPENBRACKET, bracelevel);
+            addNodeEnd_s(tokenList, tempToken);
+        } else {
+            /* anything else keking for real */
+            for (traverseInd = i + 1;
+                    wholeFile[traverseInd] != '\0' &&
+                    !isWhitespace(wholeFile[traverseInd]) &&
+                    !isSpecial(wholeFile[traverseInd]);
+                    ++traverseInd) {
+                /*continue until not a valid identifyer char*/
+            }
+            tokenBuffer = copyString(wholeFile, i, (traverseInd - i));
+            tempToken = makeToken(tokenBuffer, GENERAL, bracelevel);
             addNodeEnd_s(tokenList, tempToken);
         }
 
@@ -423,6 +434,45 @@ bool isNumber(char c) {
     }
     return false;
 }
+
+
+bool isSpecial(char c) {
+    if (c == ';' ||
+            c == '(' ||
+            c == ')' ||
+            c == '{' ||
+            c == '}' ||
+            c == '[' ||
+            c == ']' ||
+            c == '.' ||
+            c == '*' ||
+            c == '/' ||
+            c == '-' ||
+            c == '+' ||
+            c == '\'' ||
+            c == '"' ||
+            c == '<' ||
+            c == '>' ||
+            c == '=' ||
+            c == '&' ||
+            c == '#' ||
+            c == ';') {
+        /* kill me */
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
