@@ -447,6 +447,32 @@ void swap(LinkedListBody_s * a, LinkedListBody_s * b) {
 }
 
 
+void cutPasteInsertAfter(LinkedList_s * head, int start, int end, int insertAfter) {
+    LinkedListBody_s * nodeBefore, * nodeInsert;
+    LinkedListBody_s * rangeEnd, * rangeStart;
+
+    /*patch up hole cut */
+    LinkedListBody_s * temp;
+    rangeStart = getElementTraverse_s(head, start);
+    rangeEnd = getElementTraverse_s(head, end);
+    nodeInsert = getElementTraverse_s(head, insertAfter);
+    temp = rangeEnd->next;
+
+    if (start == 0) {
+        /* need to work on dummey head node */
+        head->start = temp;
+    } else {
+        /* normal */
+        nodeBefore = getElementTraverse_s(head, start - 1);
+        nodeBefore->next = temp;
+    }
+
+    /* insert cut part back in */
+
+    temp = nodeInsert->next;
+    nodeInsert->next = rangeStart;
+    rangeEnd->next = temp;
+}
 
 
 

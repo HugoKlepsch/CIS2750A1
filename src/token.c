@@ -38,11 +38,42 @@ void test() {
     free(newStr);
 
     test_copyString();
+
+    LinkedList_s head;
+    initList_s(&head);
+    struct Token * temp;
+
+    temp = makeToken("this", GENERAL, 1);
+    addNodeEnd_s(&head, temp);
+
+    temp = makeToken("is", GENERAL, 2);
+    addNodeEnd_s(&head, temp);
+
+    temp = makeToken("a", GENERAL, 3);
+    addNodeEnd_s(&head, temp);
+
+    temp = makeToken("test", GENERAL, 4);
+    addNodeEnd_s(&head, temp);
+
+    temp = makeToken("of", GENERAL, 5);
+    addNodeEnd_s(&head, temp);
+
+    temp = makeToken("reorder", GENERAL, 6);
+    addNodeEnd_s(&head, temp);
+
+
+    printTokenList(&head);
+    cutPasteInsertAfter(&head, 2, 4, 5);
+    puts("");
+    printTokenList(&head);
+
+    destroyList_s(&head, NULL);
 }
 
 
 int main(int argc, char ** argv) {
     char filename[100];
+    char outfilename[100] = "out.c";
 
     /* needs one arg of the filename */
     if (argc != 2) {
@@ -61,6 +92,8 @@ int main(int argc, char ** argv) {
         printf("Failed to initialize storage structure\n");
         return EXIT_FAILURE;
     }
+
+    /* lets tokenize the file */
     if (tokenize(filename, &tokens) == RETURN_FAILURE) {
         /*failed to tokenize file*/
         printf("Failed to tokenize file\n");
@@ -68,6 +101,12 @@ int main(int argc, char ** argv) {
         return EXIT_FAILURE;
     }
 
+    if (convert(outfilename, &tokens) == RETURN_FAILURE) {
+        /*failed to convert file*/
+        printf("Failed to convert file\n");
+        destroyList_s(&tokens, &freeToken);
+        return EXIT_FAILURE;
+    }
 
     destroyList_s(&tokens, &freeToken);
     return EXIT_SUCCESS;
@@ -88,6 +127,24 @@ void freeToken(void * token) {
     struct Token * givenToken = (struct Token *) token;
     free(givenToken->string);
     free(givenToken);
+}
+
+
+struct MangFn * makeMangFn(char * origName, char * className) {
+    struct MangFn * newMF = malloc(sizeof(newMF));
+    strcpy(newMF->origName, origName);
+    strcpy(newMF->className, className);
+    int i;
+    for (i = 0; i < 32; ++i) {
+        newMF->suffix[i] = '\0';
+    }
+    return newMF;
+}
+
+
+void freeMangFn(void * mf) {
+    struct MangFn * givenmf = (struct MangFn *) mf;
+    free(givenmf);
 }
 
 
@@ -139,6 +196,7 @@ void printTokenList(LinkedList_s * tokenList) {
     struct Token * tempToken;
     for (i = 0; i < length_s(tokenList); ++i) {
         tempToken = (struct Token *) getData_s(tokenList, i);
+        printf("%d", i);
         printToken(*tempToken);
     }
 }
@@ -224,6 +282,26 @@ int tokenize(char * filename, LinkedList_s * tokenList) {
             tempToken = makeToken(tokenBuffer, PUNCTUATION, bracelevel);
             addNodeEnd_s(tokenList, tempToken);
         } else if (wholeFile[i] == '/') {
+            tokenBuffer = copyString(wholeFile, i, 1);
+            tempToken = makeToken(tokenBuffer, PUNCTUATION, bracelevel);
+            addNodeEnd_s(tokenList, tempToken);
+        } else if (wholeFile[i] == '=') {
+            tokenBuffer = copyString(wholeFile, i, 1);
+            tempToken = makeToken(tokenBuffer, PUNCTUATION, bracelevel);
+            addNodeEnd_s(tokenList, tempToken);
+        } else if (wholeFile[i] == '&') {
+            tokenBuffer = copyString(wholeFile, i, 1);
+            tempToken = makeToken(tokenBuffer, PUNCTUATION, bracelevel);
+            addNodeEnd_s(tokenList, tempToken);
+        } else if (wholeFile[i] == '<') {
+            tokenBuffer = copyString(wholeFile, i, 1);
+            tempToken = makeToken(tokenBuffer, PUNCTUATION, bracelevel);
+            addNodeEnd_s(tokenList, tempToken);
+        } else if (wholeFile[i] == '>') {
+            tokenBuffer = copyString(wholeFile, i, 1);
+            tempToken = makeToken(tokenBuffer, PUNCTUATION, bracelevel);
+            addNodeEnd_s(tokenList, tempToken);
+        } else if (wholeFile[i] == ',') {
             tokenBuffer = copyString(wholeFile, i, 1);
             tempToken = makeToken(tokenBuffer, PUNCTUATION, bracelevel);
             addNodeEnd_s(tokenList, tempToken);
@@ -318,8 +396,155 @@ int tokenize(char * filename, LinkedList_s * tokenList) {
     printTokenList(tokenList);
     free(wholeFile);
 
+
     return RETURN_SUCCESS;
 
+}
+
+
+int convert(char * filename, LinkedList_s * tokenList) {
+
+    int i;
+    int inClassDef = 0;
+    char className[30];
+
+    LinkedList_s mangledFns;
+    initList_s(&mangledFns);
+    for (i = 1; i < length_s(tokenList); ++i) {
+        /* lets add function pointers to struct
+         * start from 1 because we're looking for  */
+        struct Token * curToken, * nameToken;
+        enum TokenType lastType;
+        curToken = (struct Token *) getData_s(tokenList, i);
+
+        if (curToken->type == CLASS) {
+            struct Token * traverseTok = getData_s(tokenList, i + 2);
+            strcpy(className, traverseTok->string);
+            inClassDef = i;
+            for(i = i + 2; traverseTok->type != OPENBRACE; ++i) {
+                traverseTok = getData_s(tokenList, i);
+            }
+            continue;
+        }
+
+        if (curToken->bracelevel == 0 && inClassDef) {
+            /*need to cut paste close brace to after variables */
+            int insert = inClassDef;
+            struct Token * tok = getData_s(tokenList, insert);
+            for (insert = inClassDef + 1;
+                    insert < length_s(tokenList) &&
+                    tok != curToken;
+                    ++insert) {
+                /* find the first openparen in class */
+                tok = getData_s(tokenList, insert);
+                if (tok->type == OPENPAREN) {
+                    /*found paren, might be function or maybe not */
+                    enum TokenType lastType = getLastTypeExcludeWhitespace(tokenList, insert);
+                    if (lastType != PUNCTUATION) {
+                        /* we're in */
+                        break;
+                    } else {
+                        /* ugh */
+                    }
+                }
+            }
+            /* By this time we have found the first function in the class.
+             * Now we should traverse backwards until we find the first
+             * punctuation, then cut/paste the closing bracket there */
+            if (tok == curToken) {
+                /* there's no functions in the class, do nothing */
+            } else {
+                
+            }
+
+
+            inClassDef = 0; /*turn off in class switch */
+        }
+
+        if (inClassDef >= 1 && curToken->bracelevel == 1) {
+            /*in class and on level 1 */
+            if (curToken->type == OPENPAREN) {
+
+                lastType = getLastTypeExcludeWhitespace(tokenList, i);
+
+                if (lastType != PUNCTUATION) {
+                    /*probably a function */
+
+                    printf("here, token %d ", i);
+
+                    /*check to see if it is a definition */
+                    struct Token * traverseTok = getData_s(tokenList, i + 1);
+                    int traverseInd;
+                    bool isDef = false;
+                    for (traverseInd = i; traverseInd < length_s(tokenList); ++traverseInd) {
+                        traverseTok = getData_s(tokenList, traverseInd);
+                        if (traverseTok->type == SEMICOLON) {
+                            isDef = false;
+                            break;
+                        } else if (traverseTok->type == OPENBRACE) {
+                            isDef = true;
+                            break;
+                        }
+                    }
+                    if (!isDef) {
+                        continue;
+                    }
+
+                    /*we know it is a definition */
+
+                    /*let's find it's name */
+                    int nameInd = indLastNotWhitespace(tokenList, i);
+                    nameToken = getData_s(tokenList, nameInd);
+                    printf("name: %s\n", nameToken->string);
+
+                    /*lets find it's parameters */
+                    struct MangFn * mf = makeMangFn(nameToken->string, className);
+                    getSuffix(tokenList, i, mf->suffix);
+
+                    printf("M: %s%s%s\n", mf->className, mf->origName, mf->suffix);
+                    addNodeEnd_s(&mangledFns, mf);
+                }
+            }
+        }
+
+    }
+
+    destroyList_s(&mangledFns, freeMangFn);
+
+    return RETURN_SUCCESS;
+}
+
+
+void getSuffix(LinkedList_s * tokens, int startInd, char * buffer) {
+    int i = startInd;
+    int count = 0;
+    bool keepGoing = true;
+    for (i = startInd; i < length_s(tokens) && keepGoing; ++i) {
+        struct Token * tok = getData_s(tokens, i);
+        if (tok->type == CLOSEPAREN) {
+            break;
+        }
+        if (tok->type == OPENPAREN) {
+            continue;
+        }
+        if (tok->type != GENERAL) {
+            continue;
+        }
+
+        /* todo grab one, traverse to punc */
+        buffer[count++] = tok->string[0];
+        int j;
+        for (j = i; j < length_s(tokens); ++j) {
+            tok = getData_s(tokens, j);
+            if (tok->type == PUNCTUATION) {
+                /* traverse to the next parameter */
+                break;
+            } else if (tok->type == CLOSEPAREN) {
+                keepGoing = false;
+            }
+        }
+        i = j;
+    }
 }
 
 
@@ -417,14 +642,27 @@ bool strmatch(char * str1, char * str2) {
 }
 
 
-enum TokenType getLastTypeExcludeWhitespace(LinkedList_s * tokenList) {
+enum TokenType getLastTypeExcludeWhitespace(LinkedList_s * tokenList, int curInd) {
     struct Token * lastToken;
 
-    int i = length_s(tokenList) - 1;
+    /*int i = length_s(tokenList) - 1; */
+    int i = curInd;
     do {
         lastToken = (struct Token *) getData_s(tokenList, i--);
     } while (lastToken->type == WHITESPACE && i >= 0);
     return lastToken->type;
+}
+
+
+int indLastNotWhitespace(LinkedList_s * tokenList, int ind) {
+    struct Token * lastToken;
+
+    /*int i = length_s(tokenList) - 1; */
+    int i = ind;
+    do {
+        lastToken = (struct Token *) getData_s(tokenList, i--);
+    } while (lastToken->type == WHITESPACE && i >= 0);
+    return i;
 }
 
 
@@ -445,6 +683,7 @@ bool isSpecial(char c) {
             c == '[' ||
             c == ']' ||
             c == '.' ||
+            c == ',' ||
             c == '*' ||
             c == '/' ||
             c == '-' ||

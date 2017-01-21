@@ -177,6 +177,8 @@ LinkedListBody_s * allocNode_s(void * data);
  */
 void swap(LinkedListBody_s * a, LinkedListBody_s * b);
 
+void cutPasteInsertAfter(LinkedList_s * head, int start, int end, int insertAfter);
+
 #endif
 
 
