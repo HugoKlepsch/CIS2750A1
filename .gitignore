@@ -2,3 +2,4 @@ tokenizer
 token
 *.o
 *.swp
+*.gch

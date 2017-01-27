@@ -43,27 +43,28 @@ void test() {
     initList_s(&head);
     struct Token * temp;
 
-    temp = makeToken("this", GENERAL, 1);
+    temp = makeToken("this", GENERAL, 0);
     addNodeEnd_s(&head, temp);
 
-    temp = makeToken("is", GENERAL, 2);
+    temp = makeToken("is", GENERAL, 1);
     addNodeEnd_s(&head, temp);
 
-    temp = makeToken("a", GENERAL, 3);
+    temp = makeToken("a", GENERAL, 2);
     addNodeEnd_s(&head, temp);
 
-    temp = makeToken("test", GENERAL, 4);
+    temp = makeToken("test", GENERAL, 3);
     addNodeEnd_s(&head, temp);
 
-    temp = makeToken("of", GENERAL, 5);
+    temp = makeToken("of", GENERAL, 4);
     addNodeEnd_s(&head, temp);
 
-    temp = makeToken("reorder", GENERAL, 6);
+    temp = makeToken("reorder", GENERAL, 5);
     addNodeEnd_s(&head, temp);
+
 
 
     printTokenList(&head);
-    cutPasteInsertAfter(&head, 2, 4, 5);
+    cutPasteInsertAfter(&head, 3, 3, 1);
     puts("");
     printTokenList(&head);
 
@@ -108,8 +109,28 @@ int main(int argc, char ** argv) {
         return EXIT_FAILURE;
     }
 
+    printTokenListFile(&tokens, "output.txt");
+
     destroyList_s(&tokens, &freeToken);
     return EXIT_SUCCESS;
+}
+
+
+void makeClass(struct Class * obj, char * className) {
+    struct Class * class = obj;
+    strcpy(class->className, className);
+    class->numMemFn = 0;
+    class->numMemVar = 0;
+
+    int i;
+    for (i = 0; i < 300; ++i) {
+        int j;
+        for (j = 0; j < 30; ++j) {
+            /* zero the strings in memberVars */
+            class->memberVars[i].type[j] = '\0';
+            class->memberVars[i].name[j] = '\0';
+        }
+    }
 }
 
 
@@ -130,21 +151,18 @@ void freeToken(void * token) {
 }
 
 
-struct MangFn * makeMangFn(char * origName, char * className) {
-    struct MangFn * newMF = malloc(sizeof(newMF));
+void makeMangFn(struct MangFn * obj, char * origName, char * className) {
+    struct MangFn * newMF = obj;
     strcpy(newMF->origName, origName);
     strcpy(newMF->className, className);
     int i;
     for (i = 0; i < 32; ++i) {
         newMF->suffix[i] = '\0';
     }
-    return newMF;
-}
-
-
-void freeMangFn(void * mf) {
-    struct MangFn * givenmf = (struct MangFn *) mf;
-    free(givenmf);
+    for (i = 0; i < 200; ++i) {
+        newMF->paramString[i] = '\0';
+    }
+    newMF->numLocalVars = 0;
 }
 
 
@@ -199,6 +217,24 @@ void printTokenList(LinkedList_s * tokenList) {
         printf("%d", i);
         printToken(*tempToken);
     }
+}
+
+
+void printTokenListFile(LinkedList_s * tokenList, char * filename) {
+    FILE * fp = fopen(filename, "w");
+    if (!fp) {
+        puts("could not open file for writing!");
+        return;
+    }
+
+    int i;
+    struct Token * tempToken;
+    for (i = 0; i < length_s(tokenList); ++i) {
+        tempToken = (struct Token *) getData_s(tokenList, i);
+        fprintf(fp, "%s", tempToken->string);
+    }
+    fclose(fp);
+
 }
 
 
@@ -404,118 +440,112 @@ int tokenize(char * filename, LinkedList_s * tokenList) {
 
 int convert(char * filename, LinkedList_s * tokenList) {
 
-    int i;
-    int inClassDef = 0;
-    char className[30];
 
-    LinkedList_s mangledFns;
-    initList_s(&mangledFns);
-    for (i = 1; i < length_s(tokenList); ++i) {
-        /* lets add function pointers to struct
-         * start from 1 because we're looking for  */
-        struct Token * curToken, * nameToken;
-        enum TokenType lastType;
-        curToken = (struct Token *) getData_s(tokenList, i);
+    printTokenList(tokenList);
 
-        if (curToken->type == CLASS) {
-            struct Token * traverseTok = getData_s(tokenList, i + 2);
-            strcpy(className, traverseTok->string);
-            inClassDef = i;
-            for(i = i + 2; traverseTok->type != OPENBRACE; ++i) {
-                traverseTok = getData_s(tokenList, i);
-            }
-            continue;
-        }
-
-        if (curToken->bracelevel == 0 && inClassDef) {
-            /*need to cut paste close brace to after variables */
-            int insert = inClassDef;
-            struct Token * tok = getData_s(tokenList, insert);
-            for (insert = inClassDef + 1;
-                    insert < length_s(tokenList) &&
-                    tok != curToken;
-                    ++insert) {
-                /* find the first openparen in class */
-                tok = getData_s(tokenList, insert);
-                if (tok->type == OPENPAREN) {
-                    /*found paren, might be function or maybe not */
-                    enum TokenType lastType = getLastTypeExcludeWhitespace(tokenList, insert);
-                    if (lastType != PUNCTUATION) {
-                        /* we're in */
-                        break;
-                    } else {
-                        /* ugh */
-                    }
-                }
-            }
-            /* By this time we have found the first function in the class.
-             * Now we should traverse backwards until we find the first
-             * punctuation, then cut/paste the closing bracket there */
-            if (tok == curToken) {
-                /* there's no functions in the class, do nothing */
-            } else {
-                
-            }
-
-
-            inClassDef = 0; /*turn off in class switch */
-        }
-
-        if (inClassDef >= 1 && curToken->bracelevel == 1) {
-            /*in class and on level 1 */
-            if (curToken->type == OPENPAREN) {
-
-                lastType = getLastTypeExcludeWhitespace(tokenList, i);
-
-                if (lastType != PUNCTUATION) {
-                    /*probably a function */
-
-                    printf("here, token %d ", i);
-
-                    /*check to see if it is a definition */
-                    struct Token * traverseTok = getData_s(tokenList, i + 1);
-                    int traverseInd;
-                    bool isDef = false;
-                    for (traverseInd = i; traverseInd < length_s(tokenList); ++traverseInd) {
-                        traverseTok = getData_s(tokenList, traverseInd);
-                        if (traverseTok->type == SEMICOLON) {
-                            isDef = false;
-                            break;
-                        } else if (traverseTok->type == OPENBRACE) {
-                            isDef = true;
-                            break;
-                        }
-                    }
-                    if (!isDef) {
-                        continue;
-                    }
-
-                    /*we know it is a definition */
-
-                    /*let's find it's name */
-                    int nameInd = indLastNotWhitespace(tokenList, i);
-                    nameToken = getData_s(tokenList, nameInd);
-                    printf("name: %s\n", nameToken->string);
-
-                    /*lets find it's parameters */
-                    struct MangFn * mf = makeMangFn(nameToken->string, className);
-                    getSuffix(tokenList, i, mf->suffix);
-
-                    printf("M: %s%s%s\n", mf->className, mf->origName, mf->suffix);
-                    addNodeEnd_s(&mangledFns, mf);
-                }
-            }
-        }
-
-    }
-
-    destroyList_s(&mangledFns, freeMangFn);
 
     return RETURN_SUCCESS;
 }
 
 
-void getSuffix(LinkedList_s * tokens, int startInd, char * buffer) {
+void analyzeFn(struct MangFn * obj, LinkedList_s * tokens, int startInd, char * className) {
+    int i = startInd;
+
+    int indOpenParen = indNextType(tokens, i, OPENPAREN);
+    int indCloseParen = indNextType(tokens, indOpenParen, CLOSEPAREN);
+
+    int indName = indLastNotWhitespace(tokens, indOpenParen);
+
+    int startOfType = indEndLast(tokens, indName) + 1; /* +1 to not include the last statement */
+    if (getType(tokens, startOfType) == WHITESPACE) {
+        startOfType += 1; /* also skip whitespace */
+    }
+
+    ll2String(tokens, startOfType, indName - 1, obj->returnType);
+    strcpy(obj->className, className);
+    strcpy(obj->origName, ((struct Token *)getData_s(tokens, indName))->string);
+    getSuffix(tokens, indOpenParen, obj->suffix, obj->paramString);
+
+    /* now get local variables */
+
+}
+
+
+void analyzeClass(struct Class * obj, LinkedList_s * tokens, int startInd) {
+    struct Class * class = obj;
+    struct Token * tok;
+    int i;
+
+    /* traverse to the start of the class */
+    i = indNextType(tokens, startInd, OPENBRACE);
+
+    /* get all member variables
+    there will be only variables before only functions */
+    for (; i < length_s(tokens); ++i) {
+        tok = getData_s(tokens, i);
+        if (tok->type == CLOSEBRACE && tok->bracelevel == 0) {
+            /* end of class */
+            break;
+        }
+
+        if (tok->type == WHITESPACE) {continue;}
+
+        if (isVariable(tokens, i)) {
+            char type[30];
+            strcpy(type, tok->string);
+
+            char varName[30];
+            struct Token * t = getData_s(tokens, i+2); /*traverse to varname */
+            strcpy(varName, t->string);
+
+            int indSemicolon, indEquals;
+            indSemicolon = indNextType(tokens, i, SEMICOLON);
+
+            bool keepGoing = true;
+            indEquals = i;
+            while (keepGoing) {
+                indEquals = indNextType(tokens, indEquals, PUNCTUATION);
+                struct Token * tempTok = getData_s(tokens, indEquals);
+                if (tempTok->string[0] == '=' || indEquals == -1) {
+                    keepGoing = false;
+                }
+            }
+            char value[200];
+            value[0] = '\0';
+            if (indEquals < indSemicolon) {
+                /* variable is defined as well as declared */
+                ll2String(tokens, indEquals, indSemicolon, value);
+            }
+            strcpy(obj->memberVars[numMemVar].type, type);
+            strcpy(obj->memberVars[numMemVar].name, varName);
+            strcpy(obj->memberVars[numMemVar++].value, value);
+            i = indSemicolon;
+        } else {
+            break; /* no longer in variables */
+        }
+    }
+
+    /* traverse to the start of the class */
+    i = indNextType(tokens, startInd, OPENBRACE);
+    /* get all member functions */
+    for (; i < length_s(tokens); ++i) {
+        tok = getData_s(tokens, i);
+        if (tok->type == CLOSEBRACE && tok->bracelevel == 0) {
+            /* end of class */
+            break;
+        }
+
+        if (tok->type == WHITESPACE) {continue;}
+
+        if (isFunction(tokens, i)) {
+            analyzeFn(obj->memberFns[numMemFn++], tokens, i, obj->className);
+        } else {
+        }
+    }
+}
+
+
+void getSuffix(LinkedList_s * tokens, int startInd, char * buffer, char * paramString) {
     int i = startInd;
     int count = 0;
     bool keepGoing = true;
@@ -536,7 +566,8 @@ void getSuffix(LinkedList_s * tokens, int startInd, char * buffer) {
         int j;
         for (j = i; j < length_s(tokens); ++j) {
             tok = getData_s(tokens, j);
-            if (tok->type == PUNCTUATION) {
+            if (tok->type == PUNCTUATION &&
+                    tok->string[0] == ',') {
                 /* traverse to the next parameter */
                 break;
             } else if (tok->type == CLOSEPAREN) {
@@ -545,6 +576,129 @@ void getSuffix(LinkedList_s * tokens, int startInd, char * buffer) {
         }
         i = j;
     }
+
+    bool recording = false;
+    for (i = startInd; i < length_s(tokens) && keepGoing; ++i) {
+        struct Token * tok = getData_s(tokens, i);
+        if (tok->type == OPENPAREN) {
+            recording = true;
+            continue;
+        }
+        if (tok->type == CLOSEPAREN) {
+            keepGoing = false;
+            break;
+        }
+        if (recording) {
+            strcat(paramString, tok->string);
+        }
+    }
+}
+
+void insertThis(LinkedList_s * tokens, int startInd, char * className) {
+    int i = startInd;
+    bool keepGoing = true;
+    for (i = startInd; i < length_s(tokens) && keepGoing; ++i) {
+        struct Token * tok = getData_s(tokens, i);
+        if (tok->type == CLOSEPAREN) {
+            break;
+        }
+        if (tok->type != OPENPAREN) {
+            continue;
+        }
+        /* we are now at a OPENPAREN */
+
+        /* add the type info */
+        char * tempStr = malloc(40);
+        sprintf(tempStr, "struct %s *", className);
+        tok = makeToken(tempStr, GENERAL, 1);
+        addNodeInsert_s(tokens, tok, i + 1);
+
+        /* add whitespace */
+        tempStr = malloc(40);
+        sprintf(tempStr, " ");
+        tok = makeToken(tempStr, WHITESPACE, 1);
+        addNodeInsert_s(tokens, tok, i + 2);
+
+        /* add variablename */
+        tempStr = malloc(40);
+        sprintf(tempStr, "this");
+        tok = makeToken(tempStr, GENERAL, 1);
+        addNodeInsert_s(tokens, tok, i + 3);
+
+        break;
+    }
+
+}
+
+
+bool isVariable(LinkedList_s * tokens, int startInd) {
+    int i = startInd;
+
+    int indSemicolon = indNextType(tokens, i, SEMICOLON);
+    int indParen = indNextType(tokens, i, OPENPAREN);
+
+    bool keepGoing = true;
+    int indEquals = i;
+
+    while (keepGoing) {
+        indEquals = indNextType(tokens, indEquals, PUNCTUATION);
+        struct Token * tempTok = getData_s(tokens, indEquals);
+        if (tempTok->string[0] == '=' || indEquals == -1) {
+            keepGoing = false;
+        }
+    }
+
+    if (indSemicolon < indParen) {
+        /*semicolon comes before, guaranteed variable */
+        return true;
+    } else {
+        /* open paren first, possibly a function */
+        /*could still be a variable with parenthesis */
+        int indOpenBrace = indNextType(tokens, i, OPENBRACE);
+
+        /* if the openbrace is before the semicolon it's a function */
+        if (indOpenBrace < indSemicolon) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+}
+
+
+bool isFunction(LinkedList_s * tokens, int startInd) {
+    int i = startInd;
+
+    int indSemicolon = indNextType(tokens, i, SEMICOLON);
+    int indParen = indNextType(tokens, i, OPENPAREN);
+
+    bool keepGoing = true;
+    int indEquals = i;
+
+    while (keepGoing) {
+        indEquals = indNextType(tokens, indEquals, PUNCTUATION);
+        struct Token * tempTok = getData_s(tokens, indEquals);
+        if (tempTok->string[0] == '=' || indEquals == -1) {
+            keepGoing = false;
+        }
+    }
+
+    if (indSemicolon < indParen) {
+        /*semicolon comes before, guaranteed variable */
+        return false;
+    } else {
+        /* open paren first, possibly a function */
+        /*could still be a variable with parenthesis */
+        int indOpenBrace = indNextType(tokens, i, OPENBRACE);
+
+        /* if the openbrace is before the semicolon it's a function */
+        if (indOpenBrace < indSemicolon) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
 }
 
 
@@ -595,6 +749,16 @@ char * copyString(char * origStr, int start, int len2Cpy) {
 }
 
 
+void ll2String(LinkedList_s * tokens, int start, int end, char * buffer) {
+    int i = 0;
+    buffer[0] = '\0';
+    for (i = start; i <= end; ++i) {
+        struct Token * t = getData_s(tokens, i);
+        strcat(buffer, t->string);
+    }
+}
+
+
 bool isIdentChar(char character) {
     /*if it is alphanumeric or underscore it is an identifyer character */
 
@@ -642,30 +806,6 @@ bool strmatch(char * str1, char * str2) {
 }
 
 
-enum TokenType getLastTypeExcludeWhitespace(LinkedList_s * tokenList, int curInd) {
-    struct Token * lastToken;
-
-    /*int i = length_s(tokenList) - 1; */
-    int i = curInd;
-    do {
-        lastToken = (struct Token *) getData_s(tokenList, i--);
-    } while (lastToken->type == WHITESPACE && i >= 0);
-    return lastToken->type;
-}
-
-
-int indLastNotWhitespace(LinkedList_s * tokenList, int ind) {
-    struct Token * lastToken;
-
-    /*int i = length_s(tokenList) - 1; */
-    int i = ind;
-    do {
-        lastToken = (struct Token *) getData_s(tokenList, i--);
-    } while (lastToken->type == WHITESPACE && i >= 0);
-    return i;
-}
-
-
 bool isNumber(char c) {
     if (c >= 48 && c <= 57) {
         return true;
@@ -704,18 +844,74 @@ bool isSpecial(char c) {
 }
 
 
+enum TokenType getLastTypeExcludeWhitespace(LinkedList_s * tokenList, int curInd) {
+    struct Token * lastToken;
+
+    /*int i = length_s(tokenList) - 1; */
+    int i = curInd;
+    do {
+        lastToken = (struct Token *) getData_s(tokenList, i--);
+    } while (lastToken->type == WHITESPACE && i >= 0);
+    return lastToken->type;
+}
 
 
+int indLastNotWhitespace(LinkedList_s * tokenList, int ind) {
+    struct Token * lastToken;
 
+    /*int i = length_s(tokenList) - 1; */
+    int i = ind;
+    do {
+        lastToken = (struct Token *) getData_s(tokenList, i--);
+    } while (lastToken->type == WHITESPACE && i >= 0);
+    return i;
+}
 
+int indNextType(LinkedList_s * tokens, int startInd, enum TokenType type) {
+    int i;
+    struct Token * tok;
+    for (i = startInd; i < length_s(tokens); ++i){
+        tok = getData_s(tokens, i);
+        if (tok->type == type) {
+            return i;
+        }
+    }
+    return -1;
+}
 
+int indPrevType(LinkedList_s * tokens, int startInd, enum TokenType type) {
+    int i;
+    struct Token * tok;
+    for (i = startInd; i >= 0; --i){
+        tok = getData_s(tokens, i);
+        if (tok->type == type) {
+            return i;
+        }
+    }
+    return -1;
+}
 
+int indEndLast(LinkedList_s * tokens, int startInd) {
+    int largest = -1;
+    int indStartofTypeSemi = indPrevType(tokens, indName, SEMICOLON);
+    int indStartofTypeOpenB = indPrevType(tokens, indName, OPENBRACE);
+    int indStartofTypeCloseB = indPrevType(tokens, CLOSEBRACE);
 
+    if (indStartofTypeSemi > largest) {
+        largest = indStartofTypeSemi;
+    }
 
+    if (indStartofTypeOpenB > largest) {
+        largest = indStartofTypeOpenB;
+    }
 
+    if (indStartofTypeCloseB > largest) {
+        largest = indStartofTypeCloseB;
+    }
+    return largest;
+}
 
-
-
-
-
-
+enum TokenType getType(LinkedList_s * tokens, int ind) {
+    struct Token * tok = getData_s(tokens, ind);
+    return tok->type;
+}
